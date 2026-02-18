@@ -3,6 +3,8 @@ project(lab_edd_practica_oficial_UNO)
 
 set(CMAKE_CXX_STANDARD 20)
 
+include_directories(include)
+
 add_executable(lab_edd_practica_oficial_UNO main.cpp
         include/Carta.h
         include/PilaCartas.h
@@ -16,6 +18,4 @@ add_executable(lab_edd_practica_oficial_UNO main.cpp
         src/Jugador.cpp
         src/MesaJugadores.cpp
         src/Partida.cpp
-        Hola.cpp
-        Hola.h
 )
