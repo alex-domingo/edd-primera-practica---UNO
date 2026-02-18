@@ -1,0 +1,13 @@
+//
+// Created by Ludvi on 18/02/2026.
+//
+
+#ifndef LAB_EDD_PRACTICA_OFICIAL_UNO_HOLA_H
+#define LAB_EDD_PRACTICA_OFICIAL_UNO_HOLA_H
+
+
+class Hola {
+};
+
+
+#endif //LAB_EDD_PRACTICA_OFICIAL_UNO_HOLA_H
