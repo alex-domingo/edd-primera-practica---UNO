@@ -22,9 +22,9 @@ void Partida::jugar() {
     configurarJugadores();
     if (mesaJugadores.size() < 2) return;
 
-    construirMazoBasicoYBarajar();
+    construirMazoOficialYBarajar(mesaJugadores.size());
     repartir(7);
-    iniciarCartaEnMesa();
+    iniciarCartaEnMesaSoloNumero();
 
     bool juegoTerminado = false;
 
@@ -36,17 +36,20 @@ void Partida::jugar() {
         std::cout << "Turno de: " << jugadorActual->getNombre() << "\n";
         mostrarCartaEnMesa();
         std::cout << "Color actual: " << Carta(colorActual, Carta::NUMERO, 0).colorComoTexto() << "\n";
+        mostrarResumenMazos();
+
         std::cout << "\nMano:\n";
         jugadorActual->getMano().imprimir();
 
         ejecutarTurnoJugador();
 
         if (jugadorActual->cantidadCartas() == 0) {
-            std::cout << "\n*** GANADOR: " << jugadorActual->getNombre() << " ***\n";
+            std::cout << "\n/// GANADOR: " << jugadorActual->getNombre() << " ///\n";
             juegoTerminado = true;
             continue;
         }
 
+        // avanzar normal (si hubo SALTO/ROBA2/ROBA4, ya lo manejamos en aplicarEfectoBasicoDeCarta)
         mesaJugadores.avanzarTurno(direccionJuego);
     }
 }
@@ -75,18 +78,53 @@ void Partida::configurarJugadores() {
     }
 }
 
-void Partida::construirMazoBasicoYBarajar() {
-    // mazo base para tener juego jugable de momento:
-    // 4 colores * 10 números = 40 cartas.
-    totalCartasPool = 40;
+int Partida::calcularCantidadDecks(int cantidadJugadores) const {
+    // nDecks = ((n_jugadores - 1) / 6) + 1
+    int cantidadDecks = ((cantidadJugadores - 1) / 6) + 1;
+    return cantidadDecks;
+}
+
+void Partida::construirMazoOficialYBarajar(int cantidadJugadores) {
+    int cantidadDecks = calcularCantidadDecks(cantidadJugadores);
+    int cartasPorDeck = 108;
+    totalCartasPool = cantidadDecks * cartasPorDeck;
+
     poolCartas = new Carta *[totalCartasPool];
 
     int indiceCarta = 0;
-    for (int color = 0; color < 4; color++) {
-        for (int valor = 0; valor <= 9; valor++) {
-            poolCartas[indiceCarta] = new Carta((Carta::Color) color, Carta::NUMERO, valor);
-            indiceCarta++;
+
+    for (int deck = 0; deck < cantidadDecks; deck++) {
+        // Por color (ROJO, AMARILLO, AZUL, VERDE)
+        for (int color = 0; color < 4; color++) {
+            // Un solo 0
+            poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::NUMERO, 0);
+
+            // Dos copias de 1-9
+            for (int valor = 1; valor <= 9; valor++) {
+                poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::NUMERO, valor);
+                poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::NUMERO, valor);
+            }
+
+            // Acciones: 2 SALTO, 2 REVERSA, 2 ROBA2
+            for (int copia = 0; copia < 2; copia++) {
+                poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::SALTO, -1);
+                poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::REVERSA, -1);
+                poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::ROBA2, -1);
+            }
         }
+
+        // Negras: 4 comodines + 4 roba4
+        for (int i = 0; i < 4; i++) {
+            poolCartas[indiceCarta++] = new Carta(Carta::NEGRO, Carta::COMODIN, -1);
+            poolCartas[indiceCarta++] = new Carta(Carta::NEGRO, Carta::ROBA4, -1);
+        }
+    }
+
+    // Seguridad
+    if (indiceCarta != totalCartasPool) {
+        std::cout << "ADVERTENCIA: total cartas construidas (" << indiceCarta
+                << ") != esperado (" << totalCartasPool << ")\n";
+        totalCartasPool = indiceCarta;
     }
 
     std::srand((unsigned) std::time(nullptr));
@@ -95,6 +133,9 @@ void Partida::construirMazoBasicoYBarajar() {
     for (int i = 0; i < totalCartasPool; i++) {
         mazoRobar.push(poolCartas[i]);
     }
+
+    std::cout << "\nMazo oficial construido: " << totalCartasPool
+            << " cartas (" << cantidadDecks << " deck(s)).\n";
 }
 
 void Partida::barajar(Carta **arregloCartas, int cantidadCartas) {
@@ -111,28 +152,36 @@ void Partida::repartir(int cartasPorJugador) {
         for (int i = 0; i < mesaJugadores.size(); i++) {
             Jugador *jugador = mesaJugadores.getJugadorActual();
             if (jugador != nullptr) {
-                jugador->robarCartas(mazoRobar, 1);
+                robarCartasAJugador(jugador, 1);
             }
             mesaJugadores.avanzarTurno(direccionJuego);
         }
     }
 }
 
-void Partida::iniciarCartaEnMesa() {
-    Carta *cartaInicial = mazoRobar.pop();
-    if (cartaInicial == nullptr) {
-        std::cout << "No hay cartas para iniciar.\n";
-        return;
+void Partida::iniciarCartaEnMesaSoloNumero() {
+    // Para que el inicio sea limpio: buscamos una carta NUMERO.
+    // Si sale acción/negra, la devolvemos al mazo (push), y seguimos buscando.
+    Carta *cartaInicial = nullptr;
+
+    while (true) {
+        reponerMazoSiVacio();
+        cartaInicial = mazoRobar.pop();
+        if (cartaInicial == nullptr) {
+            std::cout << "No hay cartas para iniciar.\n";
+            return;
+        }
+
+        if (cartaInicial->getTipo() == Carta::NUMERO && !cartaInicial->esNegra()) {
+            break;
+        }
+
+        // Devolvemos al mazo para no “perderla”
+        mazoRobar.push(cartaInicial);
     }
 
     pilaDescarte.push(cartaInicial);
-
-    // si no es negra, el color actual es el de la carta
-    if (!cartaInicial->esNegra()) {
-        colorActual = cartaInicial->getColor();
-    } else {
-        colorActual = Carta::ROJO; // por defecto, pero en mazo base no hay negras
-    }
+    colorActual = cartaInicial->getColor();
 
     std::cout << "\nCarta inicial en mesa: ";
     cartaInicial->imprimir();
@@ -148,6 +197,56 @@ void Partida::mostrarCartaEnMesa() const {
         cartaEnMesa->imprimir();
     }
     std::cout << "\n";
+}
+
+void Partida::mostrarResumenMazos() const {
+    std::cout << "Mazo: " << mazoRobar.size() << " | Descarte: " << pilaDescarte.size() << "\n";
+}
+
+void Partida::reponerMazoSiVacio() {
+    if (!mazoRobar.estaVacia()) return;
+
+    // Si no hay suficientes cartas en descarte, no podemos reponer
+    if (pilaDescarte.size() <= 1) {
+        return;
+    }
+
+    // Guardamos la carta superior del descarte (se queda en mesa)
+    Carta *cartaEnMesa = pilaDescarte.pop();
+
+    int cantidadParaReponer = pilaDescarte.size();
+    Carta **arregloTemporal = new Carta *[cantidadParaReponer];
+
+    for (int i = 0; i < cantidadParaReponer; i++) {
+        arregloTemporal[i] = pilaDescarte.pop();
+    }
+
+    barajar(arregloTemporal, cantidadParaReponer);
+
+    for (int i = 0; i < cantidadParaReponer; i++) {
+        mazoRobar.push(arregloTemporal[i]);
+    }
+
+    delete[] arregloTemporal;
+
+    // Regresamos la carta en mesa al descarte
+    pilaDescarte.push(cartaEnMesa);
+
+    std::cout << "(Repuesto mazo con el descarte)\n";
+}
+
+void Partida::robarCartasAJugador(Jugador *jugador, int cantidadARobar) {
+    if (jugador == nullptr) return;
+
+    for (int i = 0; i < cantidadARobar; i++) {
+        reponerMazoSiVacio();
+        Carta *cartaRobada = mazoRobar.pop();
+        if (cartaRobada == nullptr) {
+            std::cout << "No hay cartas para robar.\n";
+            return;
+        }
+        jugador->getMano().insertarAlFinal(cartaRobada);
+    }
 }
 
 Carta::Color Partida::solicitarColorAlJugador() {
@@ -166,6 +265,45 @@ Carta::Color Partida::solicitarColorAlJugador() {
     }
 }
 
+void Partida::aplicarEfectoBasicoDeCarta(Carta *cartaJugada) {
+    if (cartaJugada == nullptr) return;
+
+    switch (cartaJugada->getTipo()) {
+        case Carta::REVERSA:
+            direccionJuego *= -1;
+            std::cout << "(Efecto) REVERSA: cambia direccion.\n";
+            break;
+
+        case Carta::SALTO:
+            std::cout << "(Efecto) SALTO: se salta al siguiente jugador.\n";
+            mesaJugadores.avanzarTurno(direccionJuego);
+            break;
+
+        case Carta::ROBA2: {
+            std::cout << "(Efecto) ROBA2: siguiente jugador roba 2 y pierde turno.\n";
+            mesaJugadores.avanzarTurno(direccionJuego);
+            Jugador *jugadorAfectado = mesaJugadores.getJugadorActual();
+            robarCartasAJugador(jugadorAfectado, 2);
+            // Se salta su turno, así que avanzamos otra vez
+            mesaJugadores.avanzarTurno(direccionJuego);
+            break;
+        }
+
+        case Carta::ROBA4: {
+            std::cout << "(Efecto) ROBA4: siguiente jugador roba 4 y pierde turno.\n";
+            mesaJugadores.avanzarTurno(direccionJuego);
+            Jugador *jugadorAfectado = mesaJugadores.getJugadorActual();
+            robarCartasAJugador(jugadorAfectado, 4);
+            mesaJugadores.avanzarTurno(direccionJuego);
+            break;
+        }
+
+        default:
+            // NUMERO, COMODIN u otras no aplican efecto aquí
+            break;
+    }
+}
+
 void Partida::ejecutarTurnoJugador() {
     Jugador *jugador = mesaJugadores.getJugadorActual();
     if (jugador == nullptr) return;
@@ -177,15 +315,15 @@ void Partida::ejecutarTurnoJugador() {
     std::cin >> opcionAccion;
 
     if (opcionAccion == 'R' || opcionAccion == 'r') {
-        Carta *cartaRobada = mazoRobar.pop();
-        if (cartaRobada == nullptr) {
-            std::cout << "Mazo vacio (reponer vendra despues).\n";
-            return;
+        robarCartasAJugador(jugador, 1);
+
+        // Mostramos la última robada (buscamos la última por índice)
+        Carta *ultimaRobada = jugador->getMano().obtenerPorIndice(jugador->cantidadCartas() - 1);
+        if (ultimaRobada != nullptr) {
+            std::cout << "Robaste: ";
+            ultimaRobada->imprimir();
+            std::cout << "\n";
         }
-        jugador->getMano().insertarAlFinal(cartaRobada);
-        std::cout << "Robaste: ";
-        cartaRobada->imprimir();
-        std::cout << "\n";
         return;
     }
 
@@ -205,7 +343,7 @@ void Partida::ejecutarTurnoJugador() {
             return;
         }
 
-        // removemos de la mano y ponemos en descarte
+        // Remover de mano y poner en descarte
         Carta *cartaJugada = jugador->getMano().removerPorIndice(indiceElegido);
         pilaDescarte.push(cartaJugada);
 
@@ -213,12 +351,15 @@ void Partida::ejecutarTurnoJugador() {
         cartaJugada->imprimir();
         std::cout << "\n";
 
-        // actualizamos color actual
+        // Actualizar color actual
         if (cartaJugada->esComodin()) {
             colorActual = solicitarColorAlJugador();
         } else {
             colorActual = cartaJugada->getColor();
         }
+
+        // Aplicar efecto básico (esto puede mover el "turno actual" internamente)
+        aplicarEfectoBasicoDeCarta(cartaJugada);
 
         return;
     }
