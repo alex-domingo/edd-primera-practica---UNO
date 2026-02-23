@@ -15,17 +15,27 @@ bool Carta::esComodin() const {
     return tipo == COMODIN || tipo == ROBA4;
 }
 
+bool Carta::esCartaAccion() const {
+    return tipo == SALTO || tipo == REVERSA || tipo == ROBA2;
+}
+
 bool Carta::esJugableSobre(const Carta *cartaEnMesa, Color colorActual) const {
     if (cartaEnMesa == nullptr) return true;
 
+    // comodines siempre jugables
     if (esComodin()) return true;
 
-    // Coincidir color actual (si el top es negro, manda colorActual)
+    // por color
     if (this->color == colorActual) return true;
 
-    // Coincidir número (solo si ambos son NUMERO)
-    if (this->tipo == NUMERO && cartaEnMesa->tipo == NUMERO) {
-        if (this->valor == cartaEnMesa->valor) return true;
+    // por número
+    if (this->tipo == NUMERO && cartaEnMesa->getTipo() == NUMERO) {
+        return this->valor == cartaEnMesa->getValor();
+    }
+
+    // por símbolo/acción (skip sobre skip, reverse sobre reverse, draw2 sobre draw2)
+    if (this->tipo != NUMERO && cartaEnMesa->getTipo() != NUMERO) {
+        return this->tipo == cartaEnMesa->getTipo();
     }
 
     return false;

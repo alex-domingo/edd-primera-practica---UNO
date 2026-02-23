@@ -37,11 +37,13 @@ public:
 
     bool esComodin() const;
 
-    // Reglas básicas por ahora:
+    bool esCartaAccion() const;
+
     // Jugable si:
     // - es comodín (negra)
-    // - o coincide color
-    // - o coincide valor (si ambos son NUMERO)
+    // - o coincide colorActual
+    // - o coincide símbolo/acción (mismo tipo) cuando NO son NUMERO
+    // - o coincide número (si ambos son NUMERO)
     bool esJugableSobre(const Carta *cartaEnMesa, Color colorActual) const;
 
     std::string colorComoTexto() const;
