@@ -6,11 +6,7 @@
 class Carta {
 public:
     enum Color {
-        ROJO = 0,
-        AMARILLO = 1,
-        AZUL = 2,
-        VERDE = 3,
-        NEGRO = 4
+        ROJO = 0, AMARILLO = 1, AZUL = 2, VERDE = 3, NEGRO = 4
     };
 
     enum Tipo {
@@ -32,12 +28,24 @@ public:
     Carta(Color color, Tipo tipo, int valor);
 
     Color getColor() const;
+
     Tipo getTipo() const;
+
     int getValor() const;
 
     bool esNegra() const;
 
+    bool esComodin() const;
+
+    // Reglas básicas por ahora:
+    // Jugable si:
+    // - es comodín (negra)
+    // - o coincide color
+    // - o coincide valor (si ambos son NUMERO)
+    bool esJugableSobre(const Carta *cartaEnMesa, Color colorActual) const;
+
     std::string colorComoTexto() const;
+
     std::string tipoComoTexto() const;
 
     void imprimir() const;
