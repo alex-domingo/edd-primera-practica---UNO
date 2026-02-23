@@ -13,25 +13,37 @@ private:
     int direccionJuego; // +1 / -1
     Carta::Color colorActual;
 
-    // Guardamos punteros para poder liberar memoria al final
-    Carta** poolCartas;
+    Carta **poolCartas;
     int totalCartasPool;
 
-    Jugador** poolJugadores;
+    Jugador **poolJugadores;
     int totalJugadoresPool;
 
 public:
     Partida();
+
     ~Partida();
 
-    void configurarJugadores();
-    void construirMazoBasicoYBarajar(); // de base (pero puede expandirse)
-    void repartir(int cartasPorJugador);
-    void mostrarEstadoInicial();
+    void jugar(); // flujo completo jugable
 
 private:
+    void configurarJugadores();
+
+    void construirMazoBasicoYBarajar();
+
+    void repartir(int cartasPorJugador);
+
+    void iniciarCartaEnMesa();
+
+    void ejecutarTurnoJugador();
+
+    Carta::Color solicitarColorAlJugador();
+
     void liberarMemoriaCentralizada();
-    void barajar(Carta** arregloCartas, int cantidadCartas);
+
+    void barajar(Carta **arregloCartas, int cantidadCartas);
+
+    void mostrarCartaEnMesa() const;
 };
 
 #endif //LAB_EDD_PRACTICA_OFICIAL_UNO_PARTIDA_H

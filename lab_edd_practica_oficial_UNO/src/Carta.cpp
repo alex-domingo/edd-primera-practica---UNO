@@ -11,6 +11,26 @@ int Carta::getValor() const { return valor; }
 
 bool Carta::esNegra() const { return color == NEGRO; }
 
+bool Carta::esComodin() const {
+    return tipo == COMODIN || tipo == ROBA4;
+}
+
+bool Carta::esJugableSobre(const Carta *cartaEnMesa, Color colorActual) const {
+    if (cartaEnMesa == nullptr) return true;
+
+    if (esComodin()) return true;
+
+    // Coincidir color actual (si el top es negro, manda colorActual)
+    if (this->color == colorActual) return true;
+
+    // Coincidir número (solo si ambos son NUMERO)
+    if (this->tipo == NUMERO && cartaEnMesa->tipo == NUMERO) {
+        if (this->valor == cartaEnMesa->valor) return true;
+    }
+
+    return false;
+}
+
 std::string Carta::colorComoTexto() const {
     switch (color) {
         case ROJO: return "ROJO";
