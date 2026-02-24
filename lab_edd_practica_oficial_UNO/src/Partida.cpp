@@ -40,7 +40,7 @@ void Partida::jugar() {
         Jugador *jugadorActual = mesaJugadores.getJugadorActual();
         if (jugadorActual == nullptr) return;
 
-        // ✅ NUEVO: resolver acumulados/stacking ANTES del turno normal
+        // Resolver acumulados/stacking ANTES del turno normal
         if (motorReglas != nullptr && motorReglas->procesarInicioTurno(*this)) {
             // El motor ya consumió el turno (robó y perdió, o apiló y pasó)
             continue;
@@ -271,8 +271,9 @@ Carta::Color Partida::solicitarColorAlJugador() {
     }
 }
 
-// ⚠️ Esta función queda SIN USO si ya usas MotorReglasUNO.
-// Puedes eliminarla luego junto con su declaración en Partida.h si ya no la necesitas.
+// creado inicialmente para verificar el uso de efecto de cartas de forma básica
+// otros métodos lo utilizan por eso se queda tal cúal
+// aqunte todas las flags las manejamos en MotorReglasUNO
 void Partida::aplicarEfectoBasicoDeCarta(Carta *cartaJugada) {
     if (cartaJugada == nullptr) return;
 
@@ -320,7 +321,7 @@ void Partida::ejecutarTurnoJugador() {
     char opcionAccion;
     std::cin >> opcionAccion;
 
-    // ✅ NUEVO: robo A/B (y auto-play en modo B) lo maneja el motor
+    // robo A/B (y auto-play en modo B) lo maneja el motor
     if (opcionAccion == 'R' || opcionAccion == 'r') {
         if (motorReglas != nullptr) {
             motorReglas->procesarRobo(*this, jugador);
@@ -342,7 +343,7 @@ void Partida::ejecutarTurnoJugador() {
             return;
         }
 
-        // ✅ NUEVO: regla no ganar con negra (si aplica)
+        // regla no ganar con negra (si aplica)
         if (motorReglas != nullptr && !motorReglas->permiteJugarComoUltima(jugador, cartaElegida)) {
             std::cout << "No puedes ganar con carta negra segun las reglas. Debes jugar otra o robar.\n";
             return;
@@ -366,7 +367,7 @@ void Partida::ejecutarTurnoJugador() {
             colorActual = cartaJugada->getColor();
         }
 
-        // ✅ NUEVO: efectos + stacking se manejan en el motor
+        // efectos + stacking se manejan en el motor
         if (motorReglas != nullptr) {
             motorReglas->aplicarEfectoDeCarta(*this, cartaJugada);
         } else {

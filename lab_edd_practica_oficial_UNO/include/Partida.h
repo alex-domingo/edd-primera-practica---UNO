@@ -57,7 +57,7 @@ private:
 
     void reponerMazoSiVacio();
 
-    // Efectos básicos (opcional: si el motor los reemplaza, puedes eliminarlo después)
+    // Efectos básicos creados inicialmente para pruebas
     void aplicarEfectoBasicoDeCarta(Carta *cartaJugada);
 
     Carta::Color solicitarColorAlJugador();
