@@ -22,6 +22,9 @@ void Partida::jugar() {
     configurarJugadores();
     if (mesaJugadores.size() < 2) return;
 
+    reglas.configurarDesdeConsola();
+    reglas.imprimirResumen();
+
     construirMazoOficialYBarajar(mesaJugadores.size());
     repartir(7);
     iniciarCartaEnMesaSoloNumero();
@@ -201,6 +204,11 @@ void Partida::mostrarCartaEnMesa() const {
 
 void Partida::mostrarResumenMazos() const {
     std::cout << "Mazo: " << mazoRobar.size() << " | Descarte: " << pilaDescarte.size() << "\n";
+
+    std::cout << "Modo robo: " << reglas.modoRobo()
+            << " | Stacking: " << (reglas.stackingActivado() ? "SI" : "NO")
+            << " | Ganar con negra: " << (reglas.ganarConNegra() ? "SI" : "NO")
+            << "\n";
 }
 
 void Partida::reponerMazoSiVacio() {

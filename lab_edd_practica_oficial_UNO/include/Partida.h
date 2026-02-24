@@ -3,6 +3,8 @@
 
 #include "MesaJugadores.h"
 #include "PilaCartas.h"
+#include "ReglasUNO.h"
+#include "EstadoStacking.h"
 
 class Partida {
 private:
@@ -19,6 +21,9 @@ private:
 
     Jugador **poolJugadores;
     int totalJugadoresPool;
+
+    ReglasUNO reglas;
+    EstadoStacking estadoStacking;
 
 public:
     Partida();
