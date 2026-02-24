@@ -40,9 +40,9 @@ void Partida::jugar() {
         Jugador *jugadorActual = mesaJugadores.getJugadorActual();
         if (jugadorActual == nullptr) return;
 
-        // Resolver acumulados/stacking ANTES del turno normal
+        // resolver acumulados/stacking ANTES del turno normal
         if (motorReglas != nullptr && motorReglas->procesarInicioTurno(*this)) {
-            // El motor ya consumió el turno (robó y perdió, o apiló y pasó)
+            // el motor ya consumió el turno (robó y perdió, o apiló y pasó)
             continue;
         }
 
@@ -63,7 +63,7 @@ void Partida::jugar() {
             continue;
         }
 
-        // Avanzar turno normal (si hubo SALTO, el motor ya avanzó internamente)
+        // avanzar turno normal (si hubo SALTO, el motor ya avanzó internamente)
         mesaJugadores.avanzarTurno(direccionJuego);
     }
 }
@@ -271,9 +271,9 @@ Carta::Color Partida::solicitarColorAlJugador() {
     }
 }
 
-// creado inicialmente para verificar el uso de efecto de cartas de forma básica
-// otros métodos lo utilizan por eso se queda tal cúal
-// aqunte todas las flags las manejamos en MotorReglasUNO
+// creado inicialmente para verificar el uso de efectos de cartas de forma básica
+// otros métodos lo utilizan, por eso se queda tal cuál
+// aunque todas la reglas por flags las manejamos en MotorReglasUNO
 void Partida::aplicarEfectoBasicoDeCarta(Carta *cartaJugada) {
     if (cartaJugada == nullptr) return;
 
