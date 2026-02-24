@@ -18,4 +18,10 @@ add_executable(lab_edd_practica_oficial_UNO main.cpp
         src/Jugador.cpp
         src/MesaJugadores.cpp
         src/Partida.cpp
+        include/ReglasUNO.h
+        src/ReglasUNO.cpp
+        include/EstadoStacking.h
+        src/EstadoStacking.cpp
+        include/MotorReglasUNO.h
+        src/MotorReglasUNO.cpp
 )

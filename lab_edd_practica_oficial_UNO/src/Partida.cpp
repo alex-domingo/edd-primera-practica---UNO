@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include "MotorReglasUNO.h"
 
 Partida::Partida()
     : direccionJuego(1),
@@ -9,10 +10,14 @@ Partida::Partida()
       poolCartas(nullptr),
       totalCartasPool(0),
       poolJugadores(nullptr),
-      totalJugadoresPool(0) {
+      totalJugadoresPool(0),
+      motorReglas(nullptr) {
+    motorReglas = new MotorReglasUNO(reglas);
 }
 
 Partida::~Partida() {
+    delete motorReglas;
+    motorReglas = nullptr;
     liberarMemoriaCentralizada();
 }
 
@@ -21,6 +26,9 @@ void Partida::jugar() {
 
     configurarJugadores();
     if (mesaJugadores.size() < 2) return;
+
+    reglas.configurarDesdeConsola();
+    reglas.imprimirResumen();
 
     construirMazoOficialYBarajar(mesaJugadores.size());
     repartir(7);
@@ -31,6 +39,12 @@ void Partida::jugar() {
     while (!juegoTerminado) {
         Jugador *jugadorActual = mesaJugadores.getJugadorActual();
         if (jugadorActual == nullptr) return;
+
+        // Resolver acumulados/stacking ANTES del turno normal
+        if (motorReglas != nullptr && motorReglas->procesarInicioTurno(*this)) {
+            // El motor ya consumió el turno (robó y perdió, o apiló y pasó)
+            continue;
+        }
 
         std::cout << "\n---------------------------------\n";
         std::cout << "Turno de: " << jugadorActual->getNombre() << "\n";
@@ -49,7 +63,7 @@ void Partida::jugar() {
             continue;
         }
 
-        // avanzar normal (si hubo SALTO/ROBA2/ROBA4, ya lo manejamos en aplicarEfectoBasicoDeCarta)
+        // Avanzar turno normal (si hubo SALTO, el motor ya avanzó internamente)
         mesaJugadores.avanzarTurno(direccionJuego);
     }
 }
@@ -79,7 +93,6 @@ void Partida::configurarJugadores() {
 }
 
 int Partida::calcularCantidadDecks(int cantidadJugadores) const {
-    // nDecks = ((n_jugadores - 1) / 6) + 1
     int cantidadDecks = ((cantidadJugadores - 1) / 6) + 1;
     return cantidadDecks;
 }
@@ -94,18 +107,14 @@ void Partida::construirMazoOficialYBarajar(int cantidadJugadores) {
     int indiceCarta = 0;
 
     for (int deck = 0; deck < cantidadDecks; deck++) {
-        // Por color (ROJO, AMARILLO, AZUL, VERDE)
         for (int color = 0; color < 4; color++) {
-            // Un solo 0
             poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::NUMERO, 0);
 
-            // Dos copias de 1-9
             for (int valor = 1; valor <= 9; valor++) {
                 poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::NUMERO, valor);
                 poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::NUMERO, valor);
             }
 
-            // Acciones: 2 SALTO, 2 REVERSA, 2 ROBA2
             for (int copia = 0; copia < 2; copia++) {
                 poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::SALTO, -1);
                 poolCartas[indiceCarta++] = new Carta((Carta::Color) color, Carta::REVERSA, -1);
@@ -113,14 +122,12 @@ void Partida::construirMazoOficialYBarajar(int cantidadJugadores) {
             }
         }
 
-        // Negras: 4 comodines + 4 roba4
         for (int i = 0; i < 4; i++) {
             poolCartas[indiceCarta++] = new Carta(Carta::NEGRO, Carta::COMODIN, -1);
             poolCartas[indiceCarta++] = new Carta(Carta::NEGRO, Carta::ROBA4, -1);
         }
     }
 
-    // Seguridad
     if (indiceCarta != totalCartasPool) {
         std::cout << "ADVERTENCIA: total cartas construidas (" << indiceCarta
                 << ") != esperado (" << totalCartasPool << ")\n";
@@ -160,8 +167,6 @@ void Partida::repartir(int cartasPorJugador) {
 }
 
 void Partida::iniciarCartaEnMesaSoloNumero() {
-    // Para que el inicio sea limpio: buscamos una carta NUMERO.
-    // Si sale acción/negra, la devolvemos al mazo (push), y seguimos buscando.
     Carta *cartaInicial = nullptr;
 
     while (true) {
@@ -176,7 +181,6 @@ void Partida::iniciarCartaEnMesaSoloNumero() {
             break;
         }
 
-        // Devolvemos al mazo para no “perderla”
         mazoRobar.push(cartaInicial);
     }
 
@@ -201,17 +205,20 @@ void Partida::mostrarCartaEnMesa() const {
 
 void Partida::mostrarResumenMazos() const {
     std::cout << "Mazo: " << mazoRobar.size() << " | Descarte: " << pilaDescarte.size() << "\n";
+
+    std::cout << "Modo robo: " << reglas.modoRobo()
+            << " | Stacking: " << (reglas.stackingActivado() ? "SI" : "NO")
+            << " | Ganar con negra: " << (reglas.ganarConNegra() ? "SI" : "NO")
+            << "\n";
 }
 
 void Partida::reponerMazoSiVacio() {
     if (!mazoRobar.estaVacia()) return;
 
-    // Si no hay suficientes cartas en descarte, no podemos reponer
     if (pilaDescarte.size() <= 1) {
         return;
     }
 
-    // Guardamos la carta superior del descarte (se queda en mesa)
     Carta *cartaEnMesa = pilaDescarte.pop();
 
     int cantidadParaReponer = pilaDescarte.size();
@@ -229,7 +236,6 @@ void Partida::reponerMazoSiVacio() {
 
     delete[] arregloTemporal;
 
-    // Regresamos la carta en mesa al descarte
     pilaDescarte.push(cartaEnMesa);
 
     std::cout << "(Repuesto mazo con el descarte)\n";
@@ -265,6 +271,9 @@ Carta::Color Partida::solicitarColorAlJugador() {
     }
 }
 
+// creado inicialmente para verificar el uso de efecto de cartas de forma básica
+// otros métodos lo utilizan por eso se queda tal cúal
+// aqunte todas las flags las manejamos en MotorReglasUNO
 void Partida::aplicarEfectoBasicoDeCarta(Carta *cartaJugada) {
     if (cartaJugada == nullptr) return;
 
@@ -284,7 +293,6 @@ void Partida::aplicarEfectoBasicoDeCarta(Carta *cartaJugada) {
             mesaJugadores.avanzarTurno(direccionJuego);
             Jugador *jugadorAfectado = mesaJugadores.getJugadorActual();
             robarCartasAJugador(jugadorAfectado, 2);
-            // Se salta su turno, así que avanzamos otra vez
             mesaJugadores.avanzarTurno(direccionJuego);
             break;
         }
@@ -299,7 +307,6 @@ void Partida::aplicarEfectoBasicoDeCarta(Carta *cartaJugada) {
         }
 
         default:
-            // NUMERO, COMODIN u otras no aplican efecto aquí
             break;
     }
 }
@@ -310,19 +317,17 @@ void Partida::ejecutarTurnoJugador() {
 
     Carta *cartaEnMesa = pilaDescarte.peek();
 
-    std::cout << "\nAccion: (J)ugar por indice, (R)obar 1: ";
+    std::cout << "\nAccion: (J)ugar por indice, (R)obar: ";
     char opcionAccion;
     std::cin >> opcionAccion;
 
+    // robo A/B (y auto-play en modo B) lo maneja el motor
     if (opcionAccion == 'R' || opcionAccion == 'r') {
-        robarCartasAJugador(jugador, 1);
-
-        // Mostramos la última robada (buscamos la última por índice)
-        Carta *ultimaRobada = jugador->getMano().obtenerPorIndice(jugador->cantidadCartas() - 1);
-        if (ultimaRobada != nullptr) {
-            std::cout << "Robaste: ";
-            ultimaRobada->imprimir();
-            std::cout << "\n";
+        if (motorReglas != nullptr) {
+            motorReglas->procesarRobo(*this, jugador);
+        } else {
+            // fallback (no debería pasar)
+            robarCartasAJugador(jugador, 1);
         }
         return;
     }
@@ -338,12 +343,17 @@ void Partida::ejecutarTurnoJugador() {
             return;
         }
 
+        // regla no ganar con negra (si aplica)
+        if (motorReglas != nullptr && !motorReglas->permiteJugarComoUltima(jugador, cartaElegida)) {
+            std::cout << "No puedes ganar con carta negra segun las reglas. Debes jugar otra o robar.\n";
+            return;
+        }
+
         if (!cartaElegida->esJugableSobre(cartaEnMesa, colorActual)) {
             std::cout << "Esa carta NO es jugable sobre la carta en mesa.\n";
             return;
         }
 
-        // Remover de mano y poner en descarte
         Carta *cartaJugada = jugador->getMano().removerPorIndice(indiceElegido);
         pilaDescarte.push(cartaJugada);
 
@@ -351,15 +361,18 @@ void Partida::ejecutarTurnoJugador() {
         cartaJugada->imprimir();
         std::cout << "\n";
 
-        // Actualizar color actual
         if (cartaJugada->esComodin()) {
             colorActual = solicitarColorAlJugador();
         } else {
             colorActual = cartaJugada->getColor();
         }
 
-        // Aplicar efecto básico (esto puede mover el "turno actual" internamente)
-        aplicarEfectoBasicoDeCarta(cartaJugada);
+        // efectos + stacking se manejan en el motor
+        if (motorReglas != nullptr) {
+            motorReglas->aplicarEfectoDeCarta(*this, cartaJugada);
+        } else {
+            aplicarEfectoBasicoDeCarta(cartaJugada);
+        }
 
         return;
     }
