@@ -6,12 +6,10 @@
 #include "ReglasUNO.h"
 #include "EstadoStacking.h"
 
-// Forward declaration para evitar include circular
 class MotorReglasUNO;
 
 class Partida {
 private:
-    // Permitir que el motor acceda a los privados de Partida
     friend class MotorReglasUNO;
 
     MesaJugadores mesaJugadores;
@@ -21,18 +19,18 @@ private:
     int direccionJuego; // +1 / -1
     Carta::Color colorActual;
 
-    // Pools para liberar memoria al final
+    // pools para liberar memoria al final
     Carta **poolCartas;
     int totalCartasPool;
 
     Jugador **poolJugadores;
     int totalJugadoresPool;
 
-    // Configuración y estado de reglas
+    // configuración y estado de reglas
     ReglasUNO reglas;
     EstadoStacking estadoStacking;
 
-    // Motor que aplica reglas y efectos usando "reglas" + "estadoStacking"
+    // motor que aplica reglas y efectos usando "reglas" + "estadoStacking"
     MotorReglasUNO *motorReglas;
 
 public:
@@ -52,12 +50,12 @@ private:
     void iniciarCartaEnMesaSoloNumero(); // para evitar casos raros al inicio
     void ejecutarTurnoJugador();
 
-    // Robos con reposición
+    // robos con reposición
     void robarCartasAJugador(Jugador *jugador, int cantidadARobar);
 
     void reponerMazoSiVacio();
 
-    // Efectos básicos creados inicialmente para pruebas
+    // efectos básicos creados inicialmente para pruebas
     void aplicarEfectoBasicoDeCarta(Carta *cartaJugada);
 
     Carta::Color solicitarColorAlJugador();

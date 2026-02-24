@@ -6,25 +6,29 @@
 class PilaCartas {
 private:
     struct NodoCarta {
-        Carta* carta;
-        NodoCarta* siguiente;
+        Carta *carta;
+        NodoCarta *siguiente;
     };
 
-    NodoCarta* tope;
+    NodoCarta *tope;
     int cantidad;
 
 public:
     PilaCartas();
+
     ~PilaCartas();
 
-    void push(Carta* carta);
-    Carta* pop();
-    Carta* peek() const;
+    void push(Carta *carta);
+
+    Carta *pop();
+
+    Carta *peek() const;
 
     bool estaVacia() const;
+
     int size() const;
 
-    void vaciarSoloNodos(); // NO libera Carta*, solo nodos
+    void vaciarSoloNodos(); // no libera Carta*, solo nodos
 };
 
 #endif //LAB_EDD_PRACTICA_OFICIAL_UNO_PILACARTAS_H

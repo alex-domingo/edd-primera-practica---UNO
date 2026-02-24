@@ -11,25 +11,25 @@ class MotorReglasUNO {
 private:
     const ReglasUNO &reglas;
 
-    // Estado de stacking
+    // estado de stacking
     int acumuladoRobo;
     Carta::Tipo tipoAcumulado; // ROBA2 o ROBA4 cuando acumuladoRobo > 0
 
 public:
     explicit MotorReglasUNO(const ReglasUNO &reglas);
 
-    // Se llama al inicio del turno: resuelve acumulados si existen
-    // Retorna true si el turno se consumió (robó y perdió turno, o apiló y pasó)
+    // se llama al inicio del turno: resuelve acumulados si existen
+    // retorna true si el turno se consumió (robó y perdió turno, o apiló y pasó)
     bool procesarInicioTurno(Partida &partida);
 
-    // Se llama cuando el jugador elige "R"
-    // Retorna true si el turno ya se consumió (en modo A siempre, en modo B depende)
+    // se llama cuando el jugador elige "R"
+    // retorna true si el turno ya se consumió (en modo A siempre, en modo B depende)
     bool procesarRobo(Partida &partida, Jugador *jugador);
 
-    // Regla "no ganar con negra"
+    // regla "no ganar con negra"
     bool permiteJugarComoUltima(Jugador *jugador, Carta *carta) const;
 
-    // Aplicar efecto básico + enganchar stacking para ROBA2/ROBA4
+    // aplicar efecto básico + enganchar stacking para ROBA2/ROBA4
     void aplicarEfectoDeCarta(Partida &partida, Carta *cartaJugada);
 
 private:

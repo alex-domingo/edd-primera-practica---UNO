@@ -12,16 +12,19 @@ private:
     bool dijoUNOEnTurno;
 
 public:
-    explicit Jugador(const std::string& nombre);
+    explicit Jugador(const std::string &nombre);
 
-    const std::string& getNombre() const;
-    Mano& getMano();
+    const std::string &getNombre() const;
+
+    Mano &getMano();
+
     int cantidadCartas() const;
 
     void setDijoUNOEnTurno(bool valor);
+
     bool getDijoUNOEnTurno() const;
 
-    void robarCartas(PilaCartas& mazo, int cantidadARobar);
+    void robarCartas(PilaCartas &mazo, int cantidadARobar);
 };
 
 #endif //LAB_EDD_PRACTICA_OFICIAL_UNO_JUGADOR_H

@@ -39,7 +39,7 @@ public:
 
     bool esCartaAccion() const;
 
-    // Jugable si:
+    // jugable si:
     // - es comodín (negra)
     // - o coincide colorActual
     // - o coincide símbolo/acción (mismo tipo) cuando NO son NUMERO

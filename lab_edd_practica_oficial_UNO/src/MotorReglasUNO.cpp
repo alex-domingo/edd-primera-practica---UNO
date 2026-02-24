@@ -10,7 +10,7 @@ MotorReglasUNO::MotorReglasUNO(const ReglasUNO &reglas)
 bool MotorReglasUNO::permiteJugarComoUltima(Jugador *jugador, Carta *carta) const {
     if (jugador == nullptr || carta == nullptr) return true;
 
-    // Si la regla dice que NO se puede ganar con negra:
+    // si la regla dice que NO se puede ganar con negra:
     if (!reglas.ganarConNegra() && jugador->cantidadCartas() == 1 && carta->esNegra()) {
         return false;
     }
@@ -123,7 +123,7 @@ bool MotorReglasUNO::procesarInicioTurno(Partida &partida) {
 bool MotorReglasUNO::procesarRobo(Partida &partida, Jugador *jugador) {
     if (jugador == nullptr) return true;
 
-    // Modo A: roba 1 y termina
+    // modo A: roba 1 y termina
     if (reglas.modoRobo() == 'A') {
         partida.robarCartasAJugador(jugador, 1);
 
@@ -136,7 +136,7 @@ bool MotorReglasUNO::procesarRobo(Partida &partida, Jugador *jugador) {
         return true;
     }
 
-    // Modo B: roba hasta que la robada sea jugable y se juega automáticamente
+    // modo B: roba hasta que la robada sea jugable y se juega automáticamente
     std::cout << "(Modo B) Robaras hasta obtener una carta jugable.\n";
 
     while (true) {
@@ -149,7 +149,7 @@ bool MotorReglasUNO::procesarRobo(Partida &partida, Jugador *jugador) {
 
         Carta *cartaEnMesa = partida.pilaDescarte.peek();
         if (ultimaRobada != nullptr && ultimaRobada->esJugableSobre(cartaEnMesa, partida.colorActual)) {
-            // Si NO puede ganar con negra, y esta carta te deja en 0 y es negra, seguimos robando
+            // si NO puede ganar con negra, y esta carta te deja en 0 y es negra, seguimos robando
             if (!permiteJugarComoUltima(jugador, ultimaRobada)) {
                 std::cout << "No puedes ganar con carta negra. Seguiras robando.\n";
                 continue;
