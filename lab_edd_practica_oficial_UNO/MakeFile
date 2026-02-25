@@ -1,0 +1,71 @@
+# Makefile multiplataforma (Linux/macOS + Windows MinGW)
+# Estructura esperada:
+#   - main.cpp
+#   - include/*.h
+#   - src/*.cpp
+
+CXX ?= g++
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
+INCLUDES := -Iinclude
+
+SRC_DIR := src
+OBJ_DIR := build/obj
+BIN_DIR := build/bin
+
+# Detectar Windows (Git Bash / PowerShell suele tener OS=Windows_NT)
+ifeq ($(OS),Windows_NT)
+    EXEEXT := .exe
+    MKDIR_P := if not exist
+    RM_RF := rmdir /s /q
+    SEP := \\
+else
+    EXEEXT :=
+    MKDIR_P := mkdir -p
+    RM_RF := rm -rf
+    SEP := /
+endif
+
+TARGET := $(BIN_DIR)$(SEP)uno$(EXEEXT)
+
+# Fuentes
+SRCS := main.cpp $(wildcard $(SRC_DIR)/*.cpp)
+# Objetos: main.cpp -> build/obj/main.o, src/*.cpp -> build/obj/src/*.o
+OBJS := $(patsubst %.cpp,$(OBJ_DIR)$(SEP)%.o,$(SRCS))
+
+.PHONY: all clean run dirs
+
+all: dirs $(TARGET)
+
+dirs:
+ifeq ($(OS),Windows_NT)
+	$(MKDIR_P) $(OBJ_DIR) mkdir $(OBJ_DIR)
+	$(MKDIR_P) $(BIN_DIR) mkdir $(BIN_DIR)
+	$(MKDIR_P) $(OBJ_DIR)$(SEP)src mkdir $(OBJ_DIR)$(SEP)src
+else
+	$(MKDIR_P) $(OBJ_DIR) $(BIN_DIR) $(OBJ_DIR)/src
+endif
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $@
+
+# Compilar main.cpp -> build/obj/main.o
+$(OBJ_DIR)$(SEP)main.o: main.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Compilar src/*.cpp -> build/obj/src/*.o
+$(OBJ_DIR)$(SEP)src$(SEP)%.o: $(SRC_DIR)$(SEP)%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+run: all
+ifeq ($(OS),Windows_NT)
+	$(TARGET)
+else
+	./$(TARGET)
+endif
+
+clean:
+ifeq ($(OS),Windows_NT)
+	-$(RM_RF) build
+else
+	$(RM_RF) build
+endif
